@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PP的练歌房 - 专业练歌平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6', // 蓝色主色调，清新专业
+                        secondary: '#f97316', // 橙色辅助色，活力温暖
+                        neutral: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            200: '#e5e7eb',
+                            300: '#d1d5db',
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                            800: '#1f2937',
+                            900: '#111827'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow-sm {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            }
+            .card-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            }
+            .card-shadow-lg {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 4px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 2px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 2px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral-50 text-neutral-800 min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <nav class="bg-white border-b border-neutral-200 sticky top-0 z-50 px-4 py-3 transition-all duration-300 card-shadow">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-microphone text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-neutral-800">PP的练歌房</h1>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button id="editor-btn" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center">
+                    <i class="fa fa-edit mr-2"></i>歌词制作
+                </button>
+                <button id="help-btn" class="p-2 rounded-full hover:bg-neutral-100 transition-colors">
+                    <i class="fa fa-question-circle text-neutral-500"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主练歌界面 -->
+    <main id="main-interface" class="flex-grow flex flex-col">
+        <div class="flex-grow flex flex-col md:flex-row">
+            <!-- 左侧：控制区 -->
+            <div class="w-full md:w-80 bg-white border-r border-neutral-200 p-6 flex flex-col">
+                <!-- 上传区域 -->
+                <div class="mb-6">
+                    <div id="upload-area" class="border-2 border-dashed border-neutral-300 rounded-xl p-6 text-center cursor-pointer hover:border-primary/60 transition-colors">
+                        <i class="fa fa-cloud-upload text-2xl text-neutral-400 mb-2"></i>
+                        <p class="text-neutral-500 text-sm">拖放伴奏或点击上传</p>
+                        <p class="text-neutral-400 text-xs mt-1">支持 MP3, WAV, OGG, FLAC</p>
+                        <input type="file" id="audio-input" accept="audio/*" multiple class="hidden">
+                    </div>
+                </div>
+                
+                <!-- 歌曲列表 -->
+                <div class="flex-grow mb-6">
+                    <h3 class="text-sm font-medium text-neutral-500 mb-3">我的伴奏</h3>
+                    <div id="song-list" class="h-48 overflow-y-auto scrollbar-thin space-y-1">
+                        <div class="text-center text-neutral-400 py-8">
+                            <p class="text-sm">还没有上传伴奏</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 移调控制 -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-neutral-500 mb-3">移调控制</h3>
+                    <div class="flex items-center justify-between bg-neutral-50 rounded-xl p-4">
+                        <button id="transpose-down" class="w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center hover:bg-neutral-100 transition-colors">
+                            <i class="fa fa-minus text-neutral-600"></i>
+                        </button>
+                        <div class="text-center">
+                            <span id="transpose-value" class="text-2xl font-bold text-primary">0</span>
+                            <p class="text-xs text-neutral-500">半音</p>
+                        </div>
+                        <button id="transpose-up" class="w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center hover:bg-neutral-100 transition-colors">
+                            <i class="fa fa-plus text-neutral-600"></i>
+                        </button>
+                    </div>
+                    <button id="reset-transpose" class="w-full mt-2 py-1.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors">
+                        重置为原调
+                    </button>
+                </div>
+                
+                <!-- 播放控制 -->
+                <div>
+                    <h3 class="text-sm font-medium text-neutral-500 mb-3">播放控制</h3>
+                    <div class="bg-neutral-50 rounded-xl p-4">
+                        <!-- 进度条 -->
+                        <div class="mb-4">
+                            <div class="relative h-1.5 bg-neutral-200 rounded-full cursor-pointer group" id="progress-container">
+                                <div id="progress" class="absolute left-0 top-0 h-full bg-primary rounded-full transition-all" style="width: 0%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-neutral-500 mt-1">
+                                <span id="current-time">0:00</span>
+                                <span id="total-time">0:00</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 控制按钮 -->
+                        <div class="flex items-center justify-center space-x-6 mb-4">
+                            <button id="prev" class="text-neutral-500 hover:text-neutral-700 transition-colors">
+                                <i class="fa fa-step-backward text-lg"></i>
+                            </button>
+                            <button id="play-pause" class="w-14 h-14 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors card-shadow-lg">
+                                <i class="fa fa-play text-xl text-white ml-1"></i>
+                            </button>
+                            <button id="next" class="text-neutral-500 hover:text-neutral-700 transition-colors">
+                                <i class="fa fa-step-forward text-lg"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- 音量和速度 -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <button id="mute" class="text-neutral-500 hover:text-neutral-700 transition-colors">
+                                    <i class="fa fa-volume-up"></i>
+                                </button>
+                                <div class="relative w-20 h-1.5 bg-neutral-200 rounded-full cursor-pointer" id="volume-container">
+                                    <div id="volume" class="absolute left-0 top-0 h-full bg-primary rounded-full transition-all" style="width: 80%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="relative">
+                                <button id="speed-btn" class="text-neutral-500 hover:text-neutral-700 transition-colors text-sm">
+                                    1.0x
+                                </button>
+                                <div id="speed-menu" class="absolute bottom-full right-0 mb-2 bg-white rounded-lg card-shadow-lg p-2 hidden">
+                                    <button class="speed-option block w-full text-left px-3 py-1 text-sm rounded hover:bg-neutral-100" data-speed="0.5">0.5x</button>
+                                    <button class="speed-option block w-full text-left px-3 py-1 text-sm rounded hover:bg-neutral-100" data-speed="0.75">0.75x</button>
+                                    <button class="speed-option block w-full text-left px-3 py-1 text-sm rounded hover:bg-neutral-100 bg-primary/10 text-primary" data-speed="1">1.0x</button>
+                                    <button class="speed-option block w-full text-left px-3 py-1 text-sm rounded hover:bg-neutral-100" data-speed="1.25">1.25x</button>
+                                    <button class="speed-option block w-full text-left px-3 py-1 text-sm rounded hover:bg-neutral-100" data-speed="1.5">1.5x</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧：歌词显示区（核心区域） -->
+            <div class="flex-grow flex flex-col bg-gradient-to-b from-white to-neutral-50">
+                <!-- 歌曲信息 -->
+                <div class="text-center py-6 border-b border-neutral-100">
+                    <h2 id="current-song-title" class="text-2xl font-bold text-neutral-800">未选择歌曲</h2>
+                    <p id="current-song-subtitle" class="text-neutral-500 mt-1">上传伴奏开始练歌</p>
+                </div>
+                
+                <!-- 歌词显示（占据大部分空间） -->
+                <div id="lyrics-container" class="flex-grow flex items-center justify-center overflow-hidden p-8">
+                    <div id="lyrics-display" class="w-full max-w-2xl h-[500px] overflow-hidden relative">
+                        <div id="lyrics-scroll" class="absolute w-full transition-transform duration-500 ease-out">
+                            <div class="text-center text-neutral-400 py-20">
+                                <i class="fa fa-music text-4xl mb-4 opacity-30"></i>
+                                <p class="text-lg">歌词将在播放时同步显示</p>
+                                <p class="text-sm mt-2">点击任意歌词可直接跳转到对应位置</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 歌词制作界面（默认隐藏） -->
+    <div id="editor-interface" class="flex-grow hidden animate-fade-in">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-neutral-800">LRC歌词制作器</h2>
+                <button id="back-to-main" class="px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50 transition-colors flex items-center">
+                    <i class="fa fa-arrow-left mr-2"></i>返回练歌
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 左侧：歌词编辑 -->
+                <div class="bg-white rounded-2xl p-6 card-shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">歌词文本</h3>
+                        <div class="flex space-x-2">
+                            <button id="clear-lyrics" class="px-3 py-1.5 text-sm rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-colors">
+                                清空
+                            </button>
+                            <button id="load-sample" class="px-3 py-1.5 text-sm rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                                加载示例
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="lyrics-input" class="w-full h-[400px] bg-neutral-50 rounded-xl p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all" placeholder="在此输入歌词，每行一句..."></textarea>
+                </div>
+                
+                <!-- 右侧：LRC预览和时间戳 -->
+                <div class="bg-white rounded-2xl p-6 card-shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">LRC歌词预览</h3>
+                        <div class="flex space-x-2">
+                            <button id="import-lrc" class="px-3 py-1.5 text-sm rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-colors">
+                                <i class="fa fa-import mr-1"></i>导入
+                            </button>
+                            <button id="export-lrc" class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors">
+                                <i class="fa fa-download mr-1"></i>导出
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="lrc-preview" class="w-full h-[400px] bg-neutral-50 rounded-xl p-4 overflow-y-auto scrollbar-thin font-mono text-sm">
+                        <div class="text-neutral-400 text-center py-20">
+                            <p>添加时间戳后将在此显示LRC格式歌词</p>
+                            <p class="text-xs mt-2">播放音频时，点击歌词行添加时间戳</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between items-center">
+                        <p class="text-xs text-neutral-500">
+                            <i class="fa fa-info-circle mr-1 text-primary"></i>
+                            快捷键：F9添加时间戳，空格播放/暂停
+                        </p>
+                        <button id="add-timestamp" class="px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                            <i class="fa fa-clock-o mr-1"></i>添加时间戳
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部播放控制 -->
+            <div class="mt-6 bg-white rounded-2xl p-6 card-shadow-lg">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+                        <i class="fa fa-music text-2xl text-white"></i>
+                    </div>
+                    
+                    <div class="flex-grow">
+                        <h3 id="editor-current-track" class="text-lg font-bold">未选择音频</h3>
+                        
+                        <!-- 进度条 -->
+                        <div class="mt-2">
+                            <div class="relative h-1.5 bg-neutral-200 rounded-full cursor-pointer group" id="editor-progress-container">
+                                <div id="editor-progress" class="absolute left-0 top-0 h-full bg-primary rounded-full transition-all" style="width: 0%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-neutral-500 mt-1">
+                                <span id="editor-current-time">0:00</span>
+                                <span id="editor-total-time">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 控制按钮 -->
+                    <div class="flex items-center space-x-4">
+                        <button id="editor-play-pause" class="w-12 h-12 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-play text-lg text-white ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-neutral-200 py-4 mt-auto">
+        <div class="container mx-auto px-4 text-center text-neutral-500 text-sm">
+            <p>© 2025 PP的练歌房 - 专业练歌平台 | 所有数据保存在本地浏览器中</p>
+        </div>
+    </footer>
+
+    <!-- 帮助模态框 -->
+    <div id="help-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 animate-slide-up card-shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">使用帮助</h3>
+                <button id="close-help" class="text-neutral-400 hover:text-neutral-600">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-sm">
+                <div>
+                    <h4 class="font-medium text-primary mb-1">1. 上传伴奏</h4>
+                    <p class="text-neutral-600">将音频文件拖放到左侧上传区域，或点击上传区域选择文件。</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-primary mb-1">2. 重命名伴奏</h4>
+                    <p class="text-neutral-600">点击歌曲列表中歌曲右侧的铅笔图标即可重命名。按Enter确认，按Esc取消。</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-primary mb-1">3. 练歌模式</h4>
+                    <p class="text-neutral-600">点击任意歌词可直接跳转到对应位置。使用移调功能升降调适配你的音域。</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-primary mb-1">4. 制作歌词</h4>
+                    <p class="text-neutral-600">点击右上角"歌词制作"按钮进入编辑器。播放音频时点击歌词行添加时间戳。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音频元素和Web Audio上下文 -->
+    <audio id="audio-player" crossorigin="anonymous">
+
+    <script>
+        // 全局变量
+        let audioFiles = [];
+        let currentAudioIndex = -1;
+        let lyrics = [];
+        let lrcLyrics = [];
+        let isPlaying = false;
+        let currentTime = 0;
+        let duration = 0;
+        let currentLyricIndex = -1;
+        let transposeValue = 0;
+        
+        // Web Audio API 变量（用于移调）
+        let audioContext;
+        let sourceNode;
+        let gainNode;
+        let audioBuffer;
+        
+        // DOM元素
+        const audioPlayer = document.getElementById('audio-player');
+        const uploadArea = document.getElementById('upload-area');
+        const audioInput = document.getElementById('audio-input');
+        const songList = document.getElementById('song-list');
+        
+        // 主界面元素
+        const mainInterface = document.getElementById('main-interface');
+        const currentSongTitle = document.getElementById('current-song-title');
+        const currentSongSubtitle = document.getElementById('current-song-subtitle');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        const lyricsDisplay = document.getElementById('lyrics-display');
+        const lyricsScroll = document.getElementById('lyrics-scroll');
+        const progressContainer = document.getElementById('progress-container');
+        const progress = document.getElementById('progress');
+        const currentTimeEl = document.getElementById('current-time');
+        const totalTimeEl = document.getElementById('total-time');
+        const playPauseBtn = document.getElementById('play-pause');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const muteBtn = document.getElementById('mute');
+        const volumeContainer = document.getElementById('volume-container');
+        const volumeEl = document.getElementById('volume');
+        const speedBtn = document.getElementById('speed-btn');
+        const speedMenu = document.getElementById('speed-menu');
+        const speedOptions = document.querySelectorAll('.speed-option');
+        const transposeDownBtn = document.getElementById('transpose-down');
+        const transposeUpBtn = document.getElementById('transpose-up');
+        const transposeValueEl = document.getElementById('transpose-value');
+        const resetTransposeBtn = document.getElementById('reset-transpose');
+        
+        // 编辑器界面元素
+        const editorInterface = document.getElementById('editor-interface');
+        const editorBtn = document.getElementById('editor-btn');
+        const backToMainBtn = document.getElementById('back-to-main');
+        const lyricsInput = document.getElementById('lyrics-input');
+        const lrcPreview = document.getElementById('lrc-preview');
+        const addTimestampBtn = document.getElementById('add-timestamp');
+        const importLrcBtn = document.getElementById('import-lrc');
+        const exportLrcBtn = document.getElementById('export-lrc');
+        const clearLyricsBtn = document.getElementById('clear-lyrics');
+        const loadSampleBtn = document.getElementById('load-sample');
+        const editorPlayPauseBtn = document.getElementById('editor-play-pause');
+        const editorProgressContainer = document.getElementById('editor-progress-container');
+        const editorProgress = document.getElementById('editor-progress');
+        const editorCurrentTimeEl = document.getElementById('editor-current-time');
+        const editorTotalTimeEl = document.getElementById('editor-total-time');
+        const editorCurrentTrack = document.getElementById('editor-current-track');
+        
+        // 帮助模态框
+        const helpBtn = document.getElementById('help-btn');
+        const helpModal = document.getElementById('help-modal');
+        const closeHelpBtn = document.getElementById('close-help');
+        
+        // 初始化
+        function init() {
+            // 初始化Web Audio上下文
+            initAudioContext();
+            
+            // 事件监听器
+            uploadArea.addEventListener('click', () => audioInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('drop', handleDrop);
+            audioInput.addEventListener('change', handleFileSelect);
+            
+            // 主界面控制
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            prevBtn.addEventListener('click', playPrev);
+            nextBtn.addEventListener('click', playNext);
+            muteBtn.addEventListener('click', toggleMute);
+            progressContainer.addEventListener('click', seek);
+            volumeContainer.addEventListener('click', setVolume);
+            speedBtn.addEventListener('click', toggleSpeedMenu);
+            speedOptions.forEach(option => {
+                option.addEventListener('click', setPlaybackSpeed);
+            });
+            
+            // 移调控制
+            transposeDownBtn.addEventListener('click', () => changeTranspose(-1));
+            transposeUpBtn.addEventListener('click', () => changeTranspose(1));
+            resetTransposeBtn.addEventListener('click', resetTranspose);
+            
+            // 界面切换
+            editorBtn.addEventListener('click', showEditor);
+            backToMainBtn.addEventListener('click', showMain);
+            
+            // 编辑器控制
+            addTimestampBtn.addEventListener('click', addTimestamp);
+            lyricsInput.addEventListener('input', updateLyricsPreview);
+            importLrcBtn.addEventListener('click', importLrc);
+            exportLrcBtn.addEventListener('click', exportLrc);
+            clearLyricsBtn.addEventListener('click', clearLyrics);
+            loadSampleBtn.addEventListener('click', loadSampleLyrics);
+            editorPlayPauseBtn.addEventListener('click', togglePlayPause);
+            editorProgressContainer.addEventListener('click', seek);
+            
+            // 帮助
+            helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+            closeHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) helpModal.classList.add('hidden');
+            });
+            
+            // 音频事件
+            audioPlayer.addEventListener('timeupdate', updateProgress);
+            audioPlayer.addEventListener('loadedmetadata', () => {
+                duration = audioPlayer.duration;
+                totalTimeEl.textContent = formatTime(duration);
+                editorTotalTimeEl.textContent = formatTime(duration);
+            });
+            audioPlayer.addEventListener('ended', handleAudioEnd);
+            
+            // 键盘快捷键
+            document.addEventListener('keydown', handleKeydown);
+            
+            // 点击外部关闭速度菜单
+            document.addEventListener('click', (e) => {
+                if (!speedBtn.contains(e.target) && !speedMenu.contains(e.target)) {
+                    speedMenu.classList.add('hidden');
+                }
+            });
+            
+            // 设置初始音量
+            audioPlayer.volume = 0.8;
+        }
+        
+        // 初始化Web Audio上下文
+        function initAudioContext() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioContext.createGain();
+                gainNode.gain.value = 1;
+            } catch (e) {
+                console.log('Web Audio API不支持，移调功能将不可用');
+            }
+        }
+        
+        // 处理拖放
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('border-primary');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('border-primary');
+            
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        }
+        
+        // 处理文件选择
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            handleFiles(files);
+        }
+        
+        // 处理音频文件
+        function handleFiles(files) {
+            Array.from(files).forEach((file) => {
+                if (file.type.startsWith('audio/')) {
+                    const audioUrl = URL.createObjectURL(file);
+                    const audio = {
+                        name: file.name.replace(/\.[^/.]+$/, ""),
+                        url: audioUrl,
+                        file: file
+                    };
+                    
+                    audioFiles.push(audio);
+                    renderSongList();
+                    
+                    // 如果是第一个音频，自动选择
+                    if (audioFiles.length === 1) {
+                        selectAudio(0);
+                    }
+                }
+            });
+        }
+        
+        // 渲染歌曲列表
+        function renderSongList() {
+            if (audioFiles.length === 0) {
+                songList.innerHTML = `
+                    <div class="text-center text-neutral-400 py-8">
+                        <p class="text-sm">还没有上传伴奏</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            songList.innerHTML = '';
+            
+            audioFiles.forEach((audio, index) => {
+                const item = document.createElement('div');
+                item.className = `flex items-center p-3 rounded-lg cursor-pointer transition-colors ${index === currentAudioIndex ? 'bg-primary/10 text-primary' : 'hover:bg-neutral-100'}`;
+                item.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fa fa-music text-primary text-sm"></i>
+                    </div>
+                    <div class="flex-grow truncate song-name" data-index="${index}">
+                        <p class="text-sm font-medium truncate">${audio.name}</p>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button class="rename-audio text-neutral-400 hover:text-primary p-1" data-index="${index}">
+                            <i class="fa fa-pencil text-xs"></i>
+                        </button>
+                        <button class="delete-audio text-neutral-400 hover:text-red-500 p-1" data-index="${index}">
+                            <i class="fa fa-trash-o text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                
+                item.addEventListener('click', (e) => {
+                    if (!e.target.closest('.delete-audio') && !e.target.closest('.rename-audio') && !e.target.closest('.rename-input')) {
+                        selectAudio(index);
+                    }
+                });
+                
+                // 重命名按钮事件
+                item.querySelector('.rename-audio').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    startRename(index);
+                });
+                
+                // 删除按钮事件
+                item.querySelector('.delete-audio').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteAudio(index);
+                });
+                
+                songList.appendChild(item);
+            });
+        }
+        
+        // 开始重命名
+        function startRename(index) {
+            const songItem = songList.children[index];
+            const nameElement = songItem.querySelector('.song-name');
+            const currentName = audioFiles[index].name;
+            
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentName;
+            input.className = 'rename-input w-full text-sm font-medium bg-white border border-primary rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30';
+            
+            // 替换文本为输入框
+            nameElement.innerHTML = '';
+            nameElement.appendChild(input);
+            
+            // 自动聚焦并选中所有文本
+            input.focus();
+            input.select();
+            
+            // 处理输入框事件
+            const finishRename = (save) => {
+                if (save && input.value.trim() !== '') {
+                    // 更新文件名
+                    audioFiles[index].name = input.value.trim();
+                    
+                    // 如果是当前播放的歌曲，更新顶部显示
+                    if (index === currentAudioIndex) {
+                        currentSongTitle.textContent = audioFiles[index].name;
+                        editorCurrentTrack.textContent = audioFiles[index].name;
+                    }
+                }
+                
+                // 重新渲染列表
+                renderSongList();
+            };
+            
+            // 按Enter确认
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finishRename(true);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    finishRename(false);
+                }
+            });
+            
+            // 点击外部取消
+            input.addEventListener('blur', () => {
+                finishRename(true);
+            });
+        }
+        
+        // 选择音频
+        function selectAudio(index) {
+            if (index < 0 || index >= audioFiles.length) return;
+            
+            currentAudioIndex = index;
+            const audio = audioFiles[index];
+            
+            audioPlayer.src = audio.url;
+            currentSongTitle.textContent = audio.name;
+            currentSongSubtitle.textContent = '本地伴奏';
+            editorCurrentTrack.textContent = audio.name;
+            
+            // 重置播放状态
+            currentTime = 0;
+            progress.style.width = '0%';
+            editorProgress.style.width = '0%';
+            currentTimeEl.textContent = '0:00';
+            editorCurrentTimeEl.textContent = '0:00';
+            
+            // 重置移调
+            resetTranspose();
+            
+            // 渲染列表
+            renderSongList();
+            
+            // 自动播放
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                updatePlayButtons();
+            }).catch(err => {
+                console.log('自动播放失败:', err);
+            });
+        }
+        
+        // 删除音频
+        function deleteAudio(index) {
+            if (index < 0 || index >= audioFiles.length) return;
+            
+            // 释放URL对象
+            URL.revokeObjectURL(audioFiles[index].url);
+            
+            // 从数组中删除
+            audioFiles.splice(index, 1);
+            
+            // 如果删除的是当前播放的音频
+            if (index === currentAudioIndex) {
+                if (audioFiles.length > 0) {
+                    // 播放下一个
+                    currentAudioIndex = Math.min(index, audioFiles.length - 1);
+                    selectAudio(currentAudioIndex);
+                } else {
+                    // 没有音频了
+                    currentAudioIndex = -1;
+                    audioPlayer.src = '';
+                    currentSongTitle.textContent = '未选择歌曲';
+                    currentSongSubtitle.textContent = '上传伴奏开始练歌';
+                    editorCurrentTrack.textContent = '未选择音频';
+                    isPlaying = false;
+                    updatePlayButtons();
+                }
+            } else if (index < currentAudioIndex) {
+                // 调整当前索引
+                currentAudioIndex--;
+            }
+            
+            renderSongList();
+        }
+        
+        // 切换播放/暂停
+        function togglePlayPause() {
+            if (currentAudioIndex === -1) return;
+            
+            // 恢复音频上下文（如果被暂停）
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            if (isPlaying) {
+                audioPlayer.pause();
+            } else {
+                audioPlayer.play();
+            }
+            
+            isPlaying = !isPlaying;
+            updatePlayButtons();
+        }
+        
+        // 更新播放按钮
+        function updatePlayButtons() {
+            const mainIcon = playPauseBtn.querySelector('i');
+            const editorIcon = editorPlayPauseBtn.querySelector('i');
+            
+            if (isPlaying) {
+                mainIcon.className = 'fa fa-pause text-lg text-white';
+                editorIcon.className = 'fa fa-pause text-lg text-white';
+            } else {
+                mainIcon.className = 'fa fa-play text-lg text-white ml-1';
+                editorIcon.className = 'fa fa-play text-lg text-white ml-1';
+            }
+        }
+        
+        // 上一首
+        function playPrev() {
+            if (audioFiles.length === 0) return;
+            
+            let newIndex = currentAudioIndex - 1;
+            if (newIndex < 0) {
+                newIndex = audioFiles.length - 1;
+            }
+            
+            selectAudio(newIndex);
+        }
+        
+        // 下一首
+        function playNext() {
+            if (audioFiles.length === 0) return;
+            
+            let newIndex = currentAudioIndex + 1;
+            if (newIndex >= audioFiles.length) {
+                newIndex = 0;
+            }
+            
+            selectAudio(newIndex);
+        }
+        
+        // 切换静音
+        function toggleMute() {
+            audioPlayer.muted = !audioPlayer.muted;
+            const icon = muteBtn.querySelector('i');
+            
+            if (audioPlayer.muted) {
+                icon.className = 'fa fa-volume-off';
+                volumeEl.style.width = '0%';
+            } else {
+                icon.className = 'fa fa-volume-up';
+                volumeEl.style.width = `${audioPlayer.volume * 100}%`;
+            }
+        }
+        
+        // 进度条跳转
+        function seek(e) {
+            const container = e.currentTarget;
+            const rect = container.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const time = percent * duration;
+            
+            audioPlayer.currentTime = time;
+            progress.style.width = `${percent * 100}%`;
+            editorProgress.style.width = `${percent * 100}%`;
+        }
+        
+        // 设置音量
+        function setVolume(e) {
+            const rect = volumeContainer.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            
+            audioPlayer.volume = Math.max(0, Math.min(1, percent));
+            volumeEl.style.width = `${audioPlayer.volume * 100}%`;
+            
+            // 更新静音图标
+            const icon = muteBtn.querySelector('i');
+            if (audioPlayer.volume === 0) {
+                icon.className = 'fa fa-volume-off';
+            } else {
+                icon.className = 'fa fa-volume-up';
+            }
+        }
+        
+        // 更新进度
+        function updateProgress() {
+            currentTime = audioPlayer.currentTime;
+            const percent = (currentTime / duration) * 100;
+            
+            progress.style.width = `${percent}%`;
+            editorProgress.style.width = `${percent}%`;
+            currentTimeEl.textContent = formatTime(currentTime);
+            editorCurrentTimeEl.textContent = formatTime(currentTime);
+            
+            // 更新歌词同步
+            updateLyricsDisplay();
+        }
+        
+        // 音频结束处理
+        function handleAudioEnd() {
+            // 单曲循环
+            audioPlayer.currentTime = 0;
+            audioPlayer.play();
+        }
+        
+        // 格式化时间
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // 切换速度菜单
+        function toggleSpeedMenu() {
+            speedMenu.classList.toggle('hidden');
+        }
+        
+        // 设置播放速度
+        function setPlaybackSpeed(e) {
+            const speed = parseFloat(e.target.dataset.speed);
+            audioPlayer.playbackRate = speed;
+            speedBtn.textContent = `${speed}x`;
+            
+            // 更新选中状态
+            speedOptions.forEach(option => {
+                option.classList.remove('bg-primary/10', 'text-primary');
+            });
+            e.target.classList.add('bg-primary/10', 'text-primary');
+            
+            speedMenu.classList.add('hidden');
+        }
+        
+        // 改变移调
+        function changeTranspose(delta) {
+            transposeValue += delta;
+            transposeValue = Math.max(-12, Math.min(12, transposeValue));
+            transposeValueEl.textContent = transposeValue > 0 ? `+${transposeValue}` : transposeValue;
+            
+            // 应用移调
+            applyTranspose();
+        }
+        
+        // 重置移调
+        function resetTranspose() {
+            transposeValue = 0;
+            transposeValueEl.textContent = '0';
+            applyTranspose();
+        }
+        
+        // 应用移调（使用Web Audio API）
+        function applyTranspose() {
+            if (!audioContext || currentAudioIndex === -1) return;
+            
+            // 如果移调为0，直接使用原始音频
+            if (transposeValue === 0) {
+                if (sourceNode) {
+                    sourceNode.disconnect();
+                    sourceNode = null;
+                }
+                audioPlayer.muted = false;
+                return;
+            }
+            
+            // 计算播放速率（半音转频率比）
+            const playbackRate = Math.pow(2, transposeValue / 12);
+            
+            // 停止之前的源节点
+            if (sourceNode) {
+                sourceNode.stop();
+                sourceNode.disconnect();
+            }
+            
+            // 静音原始音频
+            audioPlayer.muted = true;
+            
+            // 创建新的源节点
+            fetch(audioFiles[currentAudioIndex].url)
+                .then(response => response.arrayBuffer())
+                .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                .then(buffer => {
+                    audioBuffer = buffer;
+                    
+                    sourceNode = audioContext.createBufferSource();
+                    sourceNode.buffer = audioBuffer;
+                    sourceNode.playbackRate.value = playbackRate;
+                    
+                    sourceNode.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    // 从当前时间开始播放
+                    const offset = audioPlayer.currentTime;
+                    sourceNode.start(0, offset);
+                    
+                    // 同步播放状态
+                    if (!isPlaying) {
+                        sourceNode.stop();
+                    }
+                })
+                .catch(err => {
+                    console.log('移调失败:', err);
+                    audioPlayer.muted = false;
+                });
+        }
+        
+        // 更新歌词显示（主界面）
+        function updateLyricsDisplay() {
+            if (lrcLyrics.length === 0) return;
+            
+            // 找到当前应该显示的歌词
+            let newIndex = -1;
+            for (let i = lrcLyrics.length - 1; i >= 0; i--) {
+                if (currentTime >= lrcLyrics[i].time) {
+                    newIndex = i;
+                    break;
+                }
+            }
+            
+            if (newIndex !== currentLyricIndex) {
+                currentLyricIndex = newIndex;
+                renderLyricsDisplay();
+            }
+        }
+        
+        // 渲染歌词显示（主界面 - 全民K歌风格）
+        function renderLyricsDisplay() {
+            if (lrcLyrics.length === 0) {
+                lyricsScroll.innerHTML = `
+                    <div class="text-center text-neutral-400 py-20">
+                        <i class="fa fa-music text-4xl mb-4 opacity-30"></i>
+                        <p class="text-lg">歌词将在播放时同步显示</p>
+                        <p class="text-sm mt-2">点击任意歌词可直接跳转到对应位置</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            lyricsScroll.innerHTML = '';
+            
+            lrcLyrics.forEach((lyric, index) => {
+                const lineEl = document.createElement('div');
+                lineEl.className = `text-center py-4 transition-all duration-300 cursor-pointer hover:bg-neutral-100/50 rounded-lg ${index === currentLyricIndex ? 'text-4xl font-bold text-primary text-shadow-sm' : 'text-2xl text-neutral-400'}`;
+                lineEl.textContent = lyric.text;
+                lineEl.dataset.index = index;
+                lineEl.dataset.time = lyric.time;
+                
+                // 点击歌词跳转到对应时间
+                lineEl.addEventListener('click', () => {
+                    const time = parseFloat(lineEl.dataset.time);
+                    audioPlayer.currentTime = time;
+                    progress.style.width = `${(time / duration) * 100}%`;
+                    editorProgress.style.width = `${(time / duration) * 100}%`;
+                });
+                
+                lyricsScroll.appendChild(lineEl);
+            });
+            
+            // 滚动到当前歌词（居中显示）
+            if (currentLyricIndex >= 0) {
+                const lineHeight = 72; // 每行高度
+                const containerHeight = lyricsDisplay.clientHeight;
+                const offset = currentLyricIndex * lineHeight - (containerHeight / 2) + (lineHeight / 2);
+                lyricsScroll.style.transform = `translateY(-${Math.max(0, offset)}px)`;
+            }
+        }
+        
+        // 更新歌词预览（编辑器）
+        function updateLyricsPreview() {
+            const text = lyricsInput.value.trim();
+            if (!text) {
+                lrcPreview.innerHTML = `
+                    <div class="text-neutral-400 text-center py-20">
+                        <p>添加时间戳后将在此显示LRC格式歌词</p>
+                        <p class="text-xs mt-2">播放音频时，点击歌词行添加时间戳</p>
+                    </div>
+                `;
+                lyrics = [];
+                lrcLyrics = [];
+                renderLyricsDisplay();
+                return;
+            }
+            
+            lyrics = text.split('\n').filter(line => line.trim() !== '');
+            
+            // 解析LRC格式歌词
+            lrcLyrics = [];
+            lyrics.forEach(line => {
+                const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const hundredths = parseInt(match[3]);
+                    const time = minutes * 60 + seconds + hundredths / 100;
+                    const text = match[4].trim();
+                    
+                    lrcLyrics.push({
+                        time: time,
+                        text: text
+                    });
+                }
+            });
+            
+            // 按时间排序
+            lrcLyrics.sort((a, b) => a.time - b.time);
+            
+            // 渲染预览
+            lrcPreview.innerHTML = '';
+            lyrics.forEach((line, index) => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'py-2 cursor-pointer hover:bg-neutral-100 rounded px-2 transition-colors';
+                lineEl.textContent = line;
+                lineEl.dataset.index = index;
+                
+                lineEl.addEventListener('click', () => {
+                    addTimestampToLine(index);
+                });
+                
+                lrcPreview.appendChild(lineEl);
+            });
+            
+            // 更新主界面歌词
+            renderLyricsDisplay();
+        }
+        
+        // 添加时间戳
+        function addTimestamp() {
+            if (currentAudioIndex === -1 || !isPlaying) return;
+            
+            // 找到当前光标所在行
+            const textarea = lyricsInput;
+            const cursorPos = textarea.selectionStart;
+            const text = textarea.value;
+            
+            // 找到当前行
+            let lineStart = text.lastIndexOf('\n', cursorPos - 1) + 1;
+            let lineEnd = text.indexOf('\n', cursorPos);
+            if (lineEnd === -1) lineEnd = text.length;
+            
+            const lineText = text.substring(lineStart, lineEnd);
+            
+            // 如果已经有时间戳，先移除
+            const cleanedLine = lineText.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '').trim();
+            
+            // 添加新的时间戳
+            const time = audioPlayer.currentTime;
+            const minutes = Math.floor(time / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+            const hundredths = Math.floor((time % 1) * 100).toString().padStart(2, '0');
+            const timestamp = `[${minutes}:${seconds}.${hundredths}]`;
+            
+            // 替换行
+            const newText = text.substring(0, lineStart) + timestamp + cleanedLine + text.substring(lineEnd);
+            textarea.value = newText;
+            
+            // 更新预览
+            updateLyricsPreview();
+        }
+        
+        // 给指定行添加时间戳
+        function addTimestampToLine(index) {
+            if (currentAudioIndex === -1 || !isPlaying) return;
+            
+            const text = lyricsInput.value;
+            const lines = text.split('\n');
+            
+            if (index < 0 || index >= lines.length) return;
+            
+            // 如果已经有时间戳，先移除
+            const cleanedLine = lines[index].replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '').trim();
+            
+            // 添加新的时间戳
+            const time = audioPlayer.currentTime;
+            const minutes = Math.floor(time / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+            const hundredths = Math.floor((time % 1) * 100).toString().padStart(2, '0');
+            const timestamp = `[${minutes}:${seconds}.${hundredths}]`;
+            
+            // 替换行
+            lines[index] = timestamp + cleanedLine;
+            lyricsInput.value = lines.join('\n');
+            
+            // 更新预览
+            updateLyricsPreview();
+        }
+        
+        // 导入LRC文件
+        function importLrc() {
+            const input = document.createElement('input
